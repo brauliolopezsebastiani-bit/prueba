@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Financiero | POWER S.A.C.</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2b;
+      --panel-2: #172338;
+      --line: #24324d;
+      --text: #e5edf8;
+      --muted: #94a3b8;
+      --blue: #3b82f6;
+      --blue-2: #60a5fa;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --orange: #fb923c;
+      --red: #ef4444;
+      --purple: #8b5cf6;
+      --radius: 18px;
+      --shadow: 0 12px 32px rgba(0,0,0,.22);
+      --container: 1360px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #09111d 0%, #0b1220 100%);
+      color: var(--text);
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      min-height: 100%;
+    }
+
+    body { padding: 24px; }
+
+    .shell {
+      width: 100%;
+      max-width: var(--container);
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1.6fr .9fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .hero, .summary {
+      background: linear-gradient(180deg, rgba(23,35,56,.95), rgba(18,26,43,.96));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 160px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -50px; top: -50px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(59,130,246,.20) 0%, rgba(59,130,246,0) 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--blue-2);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 38px);
+      line-height: 1.05;
+      letter-spacing: -.03em;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 70ch;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      border: 1px solid #2d4268;
+      background: rgba(59,130,246,.10);
+      color: #cfe1ff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .summary {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      align-content: center;
+    }
+
+    .summary .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 700;
+    }
+
+    .summary .big {
+      font-size: clamp(28px, 2.8vw, 40px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -.03em;
+    }
+
+    .summary .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 4px;
+      background: rgba(18,26,43,.8);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      position: sticky;
+      top: 14px;
+      z-index: 5;
+      backdrop-filter: blur(10px);
+    }
+
+    .tab {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
+      transition: .22s ease;
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+
+    .tab:hover { background: rgba(255,255,255,.04); color: var(--text); }
+    .tab.active {
+      background: linear-gradient(180deg, rgba(59,130,246,.24), rgba(59,130,246,.12));
+      color: white;
+      border: 1px solid rgba(96,165,250,.26);
+    }
+
+    .page { display: none; }
+    .page.active { display: grid; gap: 18px; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .kpi {
+      background: linear-gradient(180deg, rgba(23,35,56,.98), rgba(18,26,43,.98));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      min-height: 128px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 4px;
+      background: var(--blue);
+    }
+
+    .kpi.green::before { background: var(--green); }
+    .kpi.yellow::before { background: var(--yellow); }
+    .kpi.red::before { background: var(--red); }
+    .kpi.purple::before { background: var(--purple); }
+    .kpi.orange::before { background: var(--orange); }
+
+    .kpi-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .kpi-value {
+      font-size: clamp(22px, 2.2vw, 32px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -.03em;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(23,35,56,.98), rgba(18,26,43,.98));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      margin: 0 0 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue-2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 260px;
+    }
+
+    .chart-wrap.tall { height: 320px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(36,50,77,.5);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-green  { background: rgba(16,185,129,.15); color: #34d399; }
+    .badge-blue   { background: rgba(59,130,246,.15);  color: #93c5fd; }
+    .badge-yellow { background: rgba(245,158,11,.15);  color: #fcd34d; }
+    .badge-orange { background: rgba(251,146,60,.15);  color: #fdba74; }
+    .badge-purple { background: rgba(139,92,246,.15);  color: #c4b5fd; }
+    .badge-red    { background: rgba(239,68,68,.15);   color: #fca5a5; }
+
+    .bar-mini {
+      height: 6px;
+      border-radius: 4px;
+      background: var(--line);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .bar-mini-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--blue);
+    }
+
+    .rec-list { display: grid; gap: 10px; }
+
+    .rec-item {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .rec-item strong { color: var(--text); }
+
+    .footnote {
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- TOPBAR -->
+    <section class="topbar">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Dashboard financiero ejecutivo</div>
+          <h1>POWER S.A.C. · Cierre Abril 2026</h1>
+          <p>
+            Vista gerencial de cuentas por cobrar, riesgo de morosidad, concentración por sede,
+            principales clientes y panorama resumido de obligaciones financieras.
+          </p>
+        </div>
+        <div class="hero-meta">
+          <span class="pill">📅 Corte: Abril 2026</span>
+          <span class="pill">📊 398 facturas activas</span>
+          <span class="pill">👥 128 clientes</span>
+          <span class="pill">🏢 7 sedes</span>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="label">Total Cartera CxC</div>
+        <div class="big" style="color:#60a5fa">US$ 2,317,269</div>
+        <div class="small">Saldo total según columna TOTAL DOLARES</div>
+        <div class="label" style="margin-top:8px">Cartera en riesgo crítico (&gt;31 días)</div>
+        <div class="big" style="color:#ef4444">US$ 261,540</div>
+        <div class="small">Deficiente + Dudoso + Pérdida · 11.29% del total</div>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <nav class="tabs">
+      <button class="tab active" onclick="showPage('cxc', this)">📋 Cuentas por Cobrar</button>
+      <button class="tab" onclick="showPage('cxp', this)">📤 Cuentas por Pagar</button>
+      <button class="tab" onclick="showPage('bancos', this)">🏦 Deuda Bancaria</button>
+      <button class="tab" onclick="showPage('rec', this)">💡 Recomendaciones</button>
+    </nav>
+
+    <!-- PAGE: CXC -->
+    <section class="page active" id="page-cxc">
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi green">
+          <div class="kpi-label">Aún no vence</div>
+          <div class="kpi-value" style="color:#34d399">US$ 1,623,177</div>
+          <div class="kpi-sub">70.05% de la cartera</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Normal (1–8 días)</div>
+          <div class="kpi-value" style="color:#60a5fa">US$ 143,850</div>
+          <div class="kpi-sub">6.21% de la cartera</div>
+        </div>
+        <div class="kpi yellow">
+          <div class="kpi-label">Problema potencial (9–30 días)</div>
+          <div class="kpi-value" style="color:#fcd34d">US$ 288,702</div>
+          <div class="kpi-sub">12.46% de la cartera</div>
+        </div>
+        <div class="kpi red">
+          <div class="kpi-label">Riesgo crítico (&gt;31d)</div>
+          <div class="kpi-value" style="color:#fca5a5">US$ 261,540</div>
+          <div class="kpi-sub">11.29% · Def + Dud + Pérd</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="two-col">
+        <div class="card">
+          <h3>Estados de vencimiento</h3>
+          <div class="chart-wrap">
+            <canvas id="chartEstado"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Distribución por sede</h3>
+          <div class="chart-wrap">
+            <canvas id="chartSede"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sede table + Top clients -->
+      <div class="two-col">
+        <div class="card">
+          <h3>Concentración por sede</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Sede</th>
+                <th>Saldo USD</th>
+                <th>%</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Arequipa</td>
+                <td>US$ 1,208,797</td>
+                <td>52.16%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:52.16%;background:#3b82f6"></div></div></td>
+              </tr>
+              <tr>
+                <td>Secocha</td>
+                <td>US$ 522,033</td>
+                <td>22.53%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:22.53%;background:#60a5fa"></div></div></td>
+              </tr>
+              <tr>
+                <td>Lima</td>
+                <td>US$ 250,635</td>
+                <td>10.82%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:10.82%;background:#8b5cf6"></div></div></td>
+              </tr>
+              <tr>
+                <td>Chala</td>
+                <td>US$ 190,211</td>
+                <td>8.21%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:8.21%;background:#a78bfa"></div></div></td>
+              </tr>
+              <tr>
+                <td>Nazca</td>
+                <td>US$ 72,950</td>
+                <td>3.15%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:3.15%;background:#10b981"></div></div></td>
+              </tr>
+              <tr>
+                <td>Trujillo</td>
+                <td>US$ 46,756</td>
+                <td>2.02%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:2.02%;background:#f59e0b"></div></div></td>
+              </tr>
+              <tr>
+                <td>Juliaca</td>
+                <td>US$ 25,886</td>
+                <td>1.12%</td>
+                <td><div class="bar-mini"><div class="bar-mini-fill" style="width:1.12%;background:#94a3b8"></div></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Top 10 clientes por saldo</h3>
+          <table>
+            <thead>
+              <tr><th>#</th><th>Cliente</th><th>Saldo USD</th><th>%</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>MINERA 8 DE DICIEMBRE S.A.C.</td><td>US$ 237,213</td><td><span class="badge badge-red">10.24%</span></td></tr>
+              <tr><td>2</td><td>PINARES SANCHEZ INVERSIONES E.I.R.L.</td><td>US$ 217,490</td><td><span class="badge badge-red">9.39%</span></td></tr>
+              <tr><td>3</td><td>COMPAÑIA MINERA LOROYOC S.A.C.</td><td>US$ 107,440</td><td><span class="badge badge-orange">4.64%</span></td></tr>
+              <tr><td>4</td><td>MINERA SOTRAMI S.A.</td><td>US$ 84,693</td><td><span class="badge badge-yellow">3.65%</span></td></tr>
+              <tr><td>5</td><td>CONDORI LIMAYPUMA JULIO CESAR</td><td>US$ 77,682</td><td><span class="badge badge-yellow">3.35%</span></td></tr>
+              <tr><td>6</td><td>SOC. MINERA ESPERANZA BUENOS AIRES S.A.</td><td>US$ 74,980</td><td><span class="badge badge-yellow">3.24%</span></td></tr>
+              <tr><td>7</td><td>SOCIEDAD MINERA GEDEON S.A.</td><td>US$ 66,900</td><td><span class="badge badge-blue">2.89%</span></td></tr>
+              <tr><td>8</td><td>ASOC. MINEROS ARTESANALES PEPAS DE ORO</td><td>US$ 56,445</td><td><span class="badge badge-blue">2.44%</span></td></tr>
+              <tr><td>9</td><td>PERU TRACKLESS S.A.C.</td><td>US$ 56,391</td><td><span class="badge badge-blue">2.43%</span></td></tr>
+              <tr><td>10</td><td>MINERA VICTORIA BUENOS AIRES S.A.</td><td>US$ 54,777</td><td><span class="badge badge-blue">2.36%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Riesgo por sede -->
+      <div class="card">
+        <h3>Riesgo por sede — tramos críticos (Deficiente / Dudoso / Pérdida)</h3>
+        <div class="chart-wrap tall">
+          <canvas id="chartRiesgo"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- PAGE: CXP -->
+    <section class="page" id="page-cxp">
+      <div class="kpi-grid">
+        <div class="kpi red">
+          <div class="kpi-label">Total CxP (USD)</div>
+          <div class="kpi-value" style="color:#fca5a5">US$ 5,256,027</div>
+          <div class="kpi-sub">Obligaciones en moneda extranjera</div>
+        </div>
+        <div class="kpi orange">
+          <div class="kpi-label">Atlas Copco</div>
+          <div class="kpi-value" style="color:#fdba74">US$ 2,300,000+</div>
+          <div class="kpi-sub">28% del total · Mayor carga de flujo</div>
+        </div>
+        <div class="kpi yellow">
+          <div class="kpi-label">Grupos Electrógenos Europa</div>
+          <div class="kpi-value" style="color:#fcd34d">US$ 1,039,705</div>
+          <div class="kpi-sub">20% del total CxP</div>
+        </div>
+        <div class="kpi purple">
+          <div class="kpi-label">Epiroc (subsidiarias)</div>
+          <div class="kpi-value" style="color:#c4b5fd">US$ 1,000,000+</div>
+          <div class="kpi-sub">19% del total CxP</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Concentración por proveedor (USD)</h3>
+          <div class="chart-wrap">
+            <canvas id="chartProv"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Obligaciones en Soles (S/)</h3>
+          <table>
+            <thead><tr><th>Proveedor</th><th>Monto S/</th></tr></thead>
+            <tbody>
+              <tr><td>Emp. Transportes Bedregal Hermanos S.A.C.</td><td>S/ 58,002.31</td></tr>
+              <tr><td>Arequipa Express Comité 4 S.C.R.L.</td><td>S/ 12,815.00</td></tr>
+              <tr><td>Perumotor H.G. S.A.C.</td><td>S/ 9,406.82</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Detalle de obligaciones en USD</h3>
+        <table>
+          <thead><tr><th>Proveedor</th><th>Monto USD</th><th>% del total</th></tr></thead>
+          <tbody>
+            <tr><td>Atlas Copco Perú S.A.C. / Airpower N.V.</td><td>US$ 2,300,000+</td><td><span class="badge badge-red">28%</span></td></tr>
+            <tr><td>Grupos Electrógenos Europa S.A.</td><td>US$ 1,039,705</td><td><span class="badge badge-orange">20%</span></td></tr>
+            <tr><td>Epiroc (múltiples subsidiarias)</td><td>US$ 1,000,000+</td><td><span class="badge badge-yellow">19%</span></td></tr>
+            <tr><td>Otros proveedores</td><td>US$ 916,322</td><td><span class="badge badge-blue">33%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE: BANCOS -->
+    <section class="page" id="page-bancos">
+      <div class="kpi-grid">
+        <div class="kpi red">
+          <div class="kpi-label">Deuda bancaria total</div>
+          <div class="kpi-value" style="color:#fca5a5">US$ 1,032,284</div>
+          <div class="kpi-sub">Saldo vigente con entidades financieras</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">BBVA (principal acreedor)</div>
+          <div class="kpi-value" style="color:#60a5fa">US$ 585,298</div>
+          <div class="kpi-sub">57% de la deuda bancaria total</div>
+        </div>
+        <div class="kpi purple">
+          <div class="kpi-label">Otros bancos</div>
+          <div class="kpi-value" style="color:#c4b5fd">US$ 446,986</div>
+          <div class="kpi-sub">43% de la deuda bancaria total</div>
+        </div>
+        <div class="kpi yellow">
+          <div class="kpi-label">Ratio CxC / Deuda bancaria</div>
+          <div class="kpi-value" style="color:#fcd34d">2.24x</div>
+          <div class="kpi-sub">CxC cubre 2.24x la deuda bancaria</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Distribución deuda bancaria</h3>
+          <div class="chart-wrap">
+            <canvas id="chartBancos"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Detalle por entidad</h3>
+          <table>
+            <thead><tr><th>Entidad</th><th>Deuda USD</th><th>%</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>BBVA</td>
+                <td>US$ 585,298.38</td>
+                <td><span class="badge badge-blue">57%</span></td>
+              </tr>
+              <tr>
+                <td>Otros bancos</td>
+                <td>US$ 446,985.39</td>
+                <td><span class="badge badge-purple">43%</span></td>
+              </tr>
+              <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>US$ 1,032,283.77</strong></td>
+                <td><span class="badge badge-red">100%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: RECOMENDACIONES -->
+    <section class="page" id="page-rec">
+      <div class="three-col">
+        <div class="card">
+          <h3>Cobranza</h3>
+          <div class="rec-list">
+            <div class="rec-item"><strong>Gestión inmediata:</strong> MINERA 8 DE DICIEMBRE (US$ 237K) y PINARES SANCHEZ (US$ 217K) concentran el 19.6% de la cartera. Priorizar contacto.</div>
+            <div class="rec-item"><strong>Cartera crítica:</strong> US$ 261,540 en tramos Deficiente, Dudoso y Pérdida (11.29%). Iniciar proceso de cobranza prejudicial.</div>
+            <div class="rec-item"><strong>Arequipa:</strong> Sede con mayor exposición (52.16%). Reforzar seguimiento semanal.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Financiero</h3>
+          <div class="rec-list">
+            <div class="rec-item"><strong>Ratio CxC/Deuda 2.24x:</strong> Posición saludable. La cartera cubre ampliamente la deuda bancaria.</div>
+            <div class="rec-item"><strong>CxP crítica:</strong> US$ 5,256,027 en obligaciones con proveedores. Atlas Copco (US$ 2.3M) y Epiroc (US$ 1M+) requieren plan de pagos urgente.</div>
+            <div class="rec-item"><strong>Capital de trabajo:</strong> Gestionar el ciclo de conversión para mantener liquidez operativa.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Operativo</h3>
+          <div class="rec-list">
+            <div class="rec-item"><strong>Alertas por concentración:</strong> Activar warning cuando un cliente supere 8% de la cartera.</div>
+            <div class="rec-item"><strong>Scoring por sede:</strong> Reforzar evaluación crediticia en Arequipa, Secocha y Lima.</div>
+            <div class="rec-item"><strong>Provisiones:</strong> Evaluar constitución de provisión para la cartera en estado Pérdida (US$ 72,756).</div>
+          </div>
+        </div>
+      </div>
+      <div class="footnote">
+        Nota: Las cifras de <strong>Cuentas por Cobrar</strong> están cuadradas con el Excel cargado usando la columna <strong>TOTAL DOLARES</strong>.
+        Las cifras de <strong>Cuentas por Pagar y Deuda Bancaria</strong> provienen del borrador del informe Word compartido.
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function showPage(id, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('page-' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    Chart.defaults.color = '#c8d4e3';
+    Chart.defaults.font.family = 'Inter, Segoe UI, Arial, sans-serif';
+    const gridColor = 'rgba(148,163,184,.14)';
+
+    const moneyTick = (value) => {
+      if (value >= 1000000) return 'US$ ' + (value / 1000000).toFixed(1) + 'M';
+      if (value >= 1000) return 'US$ ' + Math.round(value / 1000) + 'K';
+      return 'US$ ' + value;
+    };
+
+    // ── CHART ESTADO ─────────────────────────────────────────────
+    new Chart(document.getElementById('chartEstado'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Aún no vence', 'Problema potencial', 'Normal', 'Deficiente', 'Pérdida', 'Dudoso'],
+        datasets: [{
+          data: [1623177.30, 288701.73, 143849.74, 163079.88, 72755.51, 25704.48],
+          backgroundColor: ['#10b981', '#f59e0b', '#60a5fa', '#fb923c', '#ef4444', '#a78bfa'],
+          borderWidth: 2,
+          borderColor: '#121a2b',
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 18 } }
+        },
+        cutout: '62%'
+      }
+    });
+
+    // ── CHART SEDE ────────────────────────────────────────────────
+    new Chart(document.getElementById('chartSede'), {
+      type: 'bar',
+      data: {
+        labels: ['Arequipa', 'Secocha', 'Lima', 'Chala', 'Nazca', 'Trujillo', 'Juliaca'],
+        datasets: [{
+          label: 'Saldo USD',
+          data: [1208797.38, 522032.52, 250635.03, 190210.73, 72950.42, 46756.27, 25886.28],
+          backgroundColor: ['#3b82f6','#60a5fa','#8b5cf6','#a78bfa','#10b981','#f59e0b','#94a3b8'],
+          borderRadius: 10,
+          maxBarThickness: 48
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#c8d4e3' } },
+          y: { grid: { color: gridColor }, ticks: { callback: moneyTick } }
+        }
+      }
+    });
+
+    // ── CHART PROVEEDORES ─────────────────────────────────────────
+    new Chart(document.getElementById('chartProv'), {
+      type: 'pie',
+      data: {
+        labels: ['Atlas Copco', 'Grupos Electrógenos Europa', 'Epiroc', 'Otros'],
+        datasets: [{
+          data: [28, 20, 19, 33],
+          backgroundColor: ['#ef4444','#f59e0b','#8b5cf6','#60a5fa'],
+          borderWidth: 2,
+          borderColor: '#121a2b'
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 18 } } }
+      }
+    });
+
+    // ── CHART BANCOS ──────────────────────────────────────────────
+    new Chart(document.getElementById('chartBancos'), {
+      type: 'bar',
+      data: {
+        labels: ['BBVA', 'Otros bancos'],
+        datasets: [{
+          label: 'Deuda USD',
+          data: [585298.38, 446985.39],
+          backgroundColor: ['#3b82f6','#64748b'],
+          borderRadius: 12,
+          maxBarThickness: 58
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: gridColor }, ticks: { callback: moneyTick } }
+        }
+      }
+    });
+
+    // ── CHART RIESGO POR SEDE ─────────────────────────────────────
+    new Chart(document.getElementById('chartRiesgo'), {
+      type: 'bar',
+      data: {
+        labels: ['Arequipa', 'Secocha', 'Lima', 'Chala', 'Nazca', 'Trujillo', 'Juliaca'],
+        datasets: [
+          {
+            label: 'Deficiente',
+            data: [151710.22, 10708.89, 236.12, 294.64, 0, 130.01, 0],
+            backgroundColor: '#fb923c',
+            borderRadius: 8
+          },
+          {
+            label: 'Dudoso',
+            data: [22414.01, 2050.90, 0, 0, 0, 22.00, 1217.57],
+            backgroundColor: '#a78bfa',
+            borderRadius: 8
+          },
+          {
+            label: 'Pérdida',
+            data: [56200.43, 5127.24, 6.85, 11420.99, 0, 0, 0],
+            backgroundColor: '#ef4444',
+            borderRadius: 8
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16 } } },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, grid: { color: gridColor }, ticks: { callback: moneyTick } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
